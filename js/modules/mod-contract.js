@@ -723,7 +723,6 @@ window.ModContract=(function(){
     <button id="save">Lưu hợp đồng</button>
     <button id="print">In / Lưu PDF</button>
     <button id="html">Xuất HTML</button>
-    <button id="doc">Tải Word (.doc)</button>
     <button onclick="go('list')">Về danh sách</button>
     <span id="msg"></span>
    </div>
@@ -764,7 +763,7 @@ window.ModContract=(function(){
 
     if(k){
      c.benA={...c.benA,...k};
-     delete c.benA.id;
+     delete c.benA.id;delete c.benA.note;
      render();
     }
 
@@ -1059,8 +1058,11 @@ window.ModContract=(function(){
     }
 
     try{
-     await ContractAPI.upsert(c);
-     msg('Đã lưu.');
+     const r=await ContractAPI.saveWithCustomer(c,(k,diffs)=>confirm(
+      'Đơn vị "'+k.name+'" đã có trong Quản lý khách hàng nhưng có thông tin khác lần trước:\n\n'+
+      diffs.map(d=>'• '+d.label+': "'+(d.old||'(trống)')+'" → "'+(d.now||'(trống)')+'"').join('\n')+
+      '\n\nBấm OK: cập nhật thông tin mới vào Quản lý khách hàng.\nBấm Hủy: giữ nguyên khách hàng, thông tin khác chỉ áp dụng riêng cho hợp đồng này.'));
+     msg(r.created?'Đã lưu. Đã thêm khách hàng mới vào Quản lý khách hàng.':r.updated?'Đã lưu. Đã cập nhật thông tin khách hàng.':'Đã lưu.');
     }catch(x){
      msg(x.message,true);
     }
@@ -1090,16 +1092,6 @@ window.ModContract=(function(){
     );
    }
 
-   /*
-    * Word.
-    */
-   else if(b.id==='doc'){
-    dl(
-     fname('doc'),
-     'application/msword',
-     '\ufeff'+buildDoc(c)
-    );
-   }
   };
  }
 
