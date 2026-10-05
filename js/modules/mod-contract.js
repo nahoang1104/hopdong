@@ -723,6 +723,7 @@ window.ModContract=(function(){
     <button id="save">Lưu hợp đồng</button>
     <button id="print">In / Lưu PDF</button>
     <button id="html">Xuất HTML</button>
+    <button id="docx">Xuất Word (.docx)</button>
     <button onclick="go('list')">Về danh sách</button>
     <span id="msg"></span>
    </div>
@@ -1090,6 +1091,24 @@ window.ModContract=(function(){
      'text/html;charset=utf-8',
      buildDoc(c)
     );
+   }
+
+   /*
+    * Word (.docx).
+    */
+   else if(b.id==='docx'){
+    try{
+     dl(
+      fname('docx'),
+      DOCX_MIME,
+      buildDocx(c)
+     );
+
+     msg('Đã xuất file Word.');
+    }catch(x){
+     console.error(x);
+     msg('Không xuất được file Word: '+x.message,true);
+    }
    }
 
   };
