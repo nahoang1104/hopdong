@@ -374,6 +374,47 @@ window.ModContract=(function(){
   `).join('')+`<button data-add="${l}">+ Thêm dòng</button>`;
  };
 
+ const defaultLabelPair=(labelPath,labelText,valuePath,valueText,w='')=>{
+  const labelName=String(get(c,labelPath)??'').trim();
+  return `${labelName?inp(labelPath,labelText,w):''}${inp(valuePath,valueText,w)}`;
+ };
+
+ const customLabelRows=()=>{
+  const list=Array.isArray(c.benA.customs)?c.benA.customs:[];
+
+  return `
+   <div class="custom-labels">
+    <div class="custom-label-head">
+     <span>Nhãn tự chọn</span>
+     <button type="button" data-custom-add>+ Thêm nhãn</button>
+    </div>
+    ${list.map((item,i)=>`
+     <div class="custom-label-row">
+      <label class="f">
+       Tên nhãn
+       <input
+        data-custom-index="${i}"
+        data-custom-key="name"
+        placeholder="Tên nhãn"
+        value="${esc(item?.name??'')}"
+       >
+      </label>
+      <label class="f">
+       Nội dung
+       <input
+        data-custom-index="${i}"
+        data-custom-key="value"
+        placeholder="Nội dung"
+        value="${esc(item?.value??'')}"
+       >
+      </label>
+      <button type="button" data-custom-del="${i}">✕</button>
+     </div>
+    `).join('')}
+   </div>
+  `;
+ };
+
  /*
   * =========================
   *  BÊN A / BÊN B
@@ -386,14 +427,27 @@ window.ModContract=(function(){
 
    ${p==='benA'
     ?`
-     <label class="f">
-      Chọn khách hàng đã lưu
-      <input list="kh" id="khPick" placeholder="Gõ tên để chọn…">
-     </label>
-
-     <datalist id="kh">
-      ${custs().map(k=>`<option value="${esc(k.name)}">`).join('')}
-     </datalist>
+     <div class="customer-picker">
+      <div class="customer-picker-label">Khách hàng đã lưu</div>
+      <button type="button" class="customer-picker-trigger" data-customer-picker-open="open">
+       Chọn khách hàng đã lưu
+      </button>
+      <div class="customer-picker-modal" data-customer-picker-modal hidden>
+       <div class="customer-picker-panel">
+        <div class="customer-picker-top">
+         <strong>Chọn khách hàng đã lưu</strong>
+         <button type="button" data-customer-picker-close="close">✕</button>
+        </div>
+        <input type="search" data-customer-picker-search="search" placeholder="Tìm theo tên khách hàng…">
+        <div class="customer-picker-list">
+         ${custs().map(k=>`<button type="button" class="customer-picker-item" data-customer-pick="${esc(k.name)}">
+           <span>${esc(k.name)}</span>
+           ${k.mst?`<small>${esc(k.mst)}</small>`:''}
+         </button>`).join('') || '<div class="customer-picker-empty">Chưa có khách hàng nào trong quản lý</div>'}
+        </div>
+       </div>
+      </div>
+     </div>
     `
     :''
    }
@@ -403,15 +457,13 @@ window.ModContract=(function(){
 
     ${p==='benA'
      ?`
-      ${inp('benA.mstLabel','Nhãn mã số')}
-      ${inp('benA.mst','Mã số')}
+      ${defaultLabelPair('benA.mstLabel','Nhãn mã số','benA.mst','Mã số')}
       ${inp('benA.addr','Địa chỉ','w2')}
-      ${inp('benA.headLabel','Nhãn người ký')}
+      ${defaultLabelPair('benA.headLabel','Nhãn người ký','benA.head','Họ tên người ký')}
       ${inp('benA.title','Danh xưng')}
-      ${inp('benA.head','Họ tên người ký')}
       ${inp('benA.pos','Chức vụ (bỏ trống = ẩn)')}
-      ${inp('benA.emailLabel','Nhãn email (bỏ trống = ẩn)')}
-      ${inp('benA.email','Email')}
+      ${defaultLabelPair('benA.emailLabel','Nhãn email (bỏ trống = ẩn)','benA.email','Email')}
+      ${customLabelRows()}
      `
      :`
       ${inp('benB.mst','Mã số thuế')}
@@ -721,6 +773,7 @@ window.ModContract=(function(){
 
    <div class="bar">
     <button id="save">Lưu hợp đồng</button>
+    <button id="save-customer">Lưu khách hàng</button>
     <button id="print">In / Lưu PDF</button>
     <button id="html">Xuất HTML</button>
     <button id="docx">Xuất Word (.docx)</button>
@@ -756,18 +809,16 @@ window.ModContract=(function(){
   el.oninput=e=>{
    const t=e.target;
 
-   /*
-    * Chọn khách hàng đã lưu.
-    */
-   if(t.id==='khPick'){
-    const k=custs().find(x=>x.name===t.value);
-
-    if(k){
-     c.benA={...c.benA,...k};
-     delete c.benA.id;delete c.benA.note;
-     render();
-    }
-
+   if(t.dataset.customerPickerSearch){
+    const query=(t.value||'').toLowerCase().trim();
+    const modal=t.closest('[data-customer-picker-modal]');
+    if(!modal) return;
+    modal.querySelectorAll('[data-customer-pick]').forEach(btn=>{
+     const name=(btn.dataset.customerPick||'').toLowerCase();
+     const text=(btn.textContent||'').toLowerCase();
+     const show=!query || name.includes(query) || text.includes(query);
+     btn.style.display=show?'flex':'none';
+    });
     return;
    }
 
@@ -854,6 +905,19 @@ window.ModContract=(function(){
    /*
     * Tiêu đề Điều.
     */
+   else if(t.dataset.customIndex!=null){
+    const idx=Number(t.dataset.customIndex);
+    const k=t.dataset.customKey;
+
+    if(!Array.isArray(c.benA.customs))c.benA.customs=[];
+    c.benA.customs[idx]??={name:'',value:''};
+    c.benA.customs[idx][k]=t.value;
+    preview();
+   }
+
+   /*
+    * Tiêu đề Điều.
+    */
    else if(t.dataset.th!=null){
     c.terms[t.dataset.th].h=t.value;
    }
@@ -923,6 +987,34 @@ window.ModContract=(function(){
    if(!b)return;
 
    const d=b.dataset;
+
+   if(b.hasAttribute('data-customer-picker-open')){
+    const modal=el.querySelector('[data-customer-picker-modal]');
+    if(modal){modal.hidden=false; const search=modal.querySelector('[data-customer-picker-search]'); if(search)search.focus();}
+    return;
+   }
+
+   if(b.hasAttribute('data-customer-picker-close')){
+    const modal=el.querySelector('[data-customer-picker-modal]');
+    if(modal)modal.hidden=true;
+    return;
+   }
+
+   if(d.customerPick){
+    const k=custs().find(x=>x.name===d.customerPick);
+    if(k){
+     c.benA={...c.benA,...k};
+     delete c.benA.id;delete c.benA.note;
+     render();
+    }
+    return;
+   }
+
+   const pickerModal=e.target.closest('[data-customer-picker-modal]');
+   if(pickerModal && e.target===pickerModal){
+    pickerModal.hidden=true;
+    return;
+   }
 
    /*
     * Mở trình soạn thảo rich text.
@@ -1047,6 +1139,17 @@ window.ModContract=(function(){
     }
    }
 
+   else if(d.customAdd!=null){
+    c.benA.customs??=[];
+    c.benA.customs.push({name:'',value:''});
+    render();
+   }
+
+   else if(d.customDel!=null){
+    c.benA.customs=Array.isArray(c.benA.customs)?c.benA.customs.filter((_,i)=>i!==Number(d.customDel)):[];
+    render();
+   }
+
    /*
     * Lưu.
     */
@@ -1064,6 +1167,48 @@ window.ModContract=(function(){
       diffs.map(d=>'• '+d.label+': "'+(d.old||'(trống)')+'" → "'+(d.now||'(trống)')+'"').join('\n')+
       '\n\nBấm OK: cập nhật thông tin mới vào Quản lý khách hàng.\nBấm Hủy: giữ nguyên khách hàng, thông tin khác chỉ áp dụng riêng cho hợp đồng này.'));
      msg(r.created?'Đã lưu. Đã thêm khách hàng mới vào Quản lý khách hàng.':r.updated?'Đã lưu. Đã cập nhật thông tin khách hàng.':'Đã lưu.');
+    }catch(x){
+     msg(x.message,true);
+    }
+   }
+
+   else if(b.id==='save-customer'){
+    const ben=c.benA||{};
+    const name=String(ben.name||'').trim();
+
+    if(!name){
+     return msg('Cần nhập tên khách hàng để lưu.',true);
+    }
+
+    try{
+     const existing=ContractAPI.findCustomer(name);
+     const payload={
+      id:existing?existing.id:uid('kh'),
+      name,
+      mstLabel:String(ben.mstLabel||''),
+      mst:String(ben.mst||''),
+      addr:String(ben.addr||''),
+      headLabel:String(ben.headLabel||''),
+      title:String(ben.title||''),
+      head:String(ben.head||''),
+      pos:String(ben.pos||''),
+      emailLabel:String(ben.emailLabel||''),
+      email:String(ben.email||''),
+      customs:Array.isArray(ben.customs)?ben.customs.map(item=>({
+       name:String(item?.name||'').trim(),
+       value:String(item?.value||'').trim()
+      })).filter(item=>item.name||item.value):[],
+      note:''
+     };
+
+     if(existing){
+      Object.assign(existing,payload);
+      await ContractAPI.saveCustomer(existing);
+      msg('Đã lưu thông tin khách hàng.');
+     }else{
+      await ContractAPI.saveCustomer(payload);
+      msg('Đã lưu khách hàng mới.');
+     }
     }catch(x){
      msg(x.message,true);
     }

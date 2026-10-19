@@ -186,13 +186,19 @@ window.buildDocx=function(c){
 
  // ---- Bên A
  const L=(t,o)=>{if(t)add(text(t,null,{before:40,after:40,...(o||{})}))};
+ const D=(label,value)=>{const name=String(label??'').trim(); return name ? name+': '+(value??'') : '';};
 
  add(text('BÊN A: '+(A.name||''),{b:true},{before:100,after:40,keepNext:true}));
- if(A.mst||A.name)L((A.mstLabel||'Mã số')+': '+(A.mst||''));
+ if(D(A.mstLabel,A.mst))L(D(A.mstLabel,A.mst));
  L('Địa chỉ: '+(A.addr||''));
- L((A.headLabel||'Người đại diện')+': '+[A.title,A.head].filter(Boolean).join(' '));
+ if(D(A.headLabel,[A.title,A.head].filter(Boolean).join(' ')))L(D(A.headLabel,[A.title,A.head].filter(Boolean).join(' ')));
  if(A.pos)L('Chức vụ: '+A.pos);
- if(String(A.emailLabel||'').trim())L(String(A.emailLabel).trim()+': '+(A.email||''));
+ if(D(A.emailLabel,A.email))L(D(A.emailLabel,A.email));
+ (Array.isArray(A.customs)?A.customs:[]).forEach(item=>{
+  const name=String(item?.name??'').trim();
+  if(!name)return;
+  L(name+': '+(item?.value??''));
+ });
 
  // ---- Bên B
  add(text('BÊN B: '+(B.name||''),{b:true},{before:140,after:40,keepNext:true}));

@@ -51,7 +51,21 @@ window.buildDoc=function(c){
   */
 
  const line=t=>t?`<p>${t}</p>`:'';
-
+ const customLabelLines=(party)=>{
+  const list=Array.isArray(party?.customs)?party.customs:[];
+  return list
+   .map(item=>{
+    const name=String(item?.name??'').trim();
+    if(!name)return '';
+    return `${esc(name)}: ${esc(String(item?.value??''))}`;
+   })
+   .filter(Boolean);
+ };
+ const defaultLabelLine=(label,value)=>{
+  const name=String(label??'').trim();
+  if(!name) return '';
+  return `${esc(name)}: ${esc(String(value??''))}`;
+ };
 
  /*
   * ============================================================
@@ -228,19 +242,18 @@ window.buildDoc=function(c){
    </p>
 
    ${
-    A.mst||A.name
-     ?line(
-       `${esc(A.mstLabel||'Mã số')}: ${esc(A.mst||'')}`
-      )
+    defaultLabelLine(A.mstLabel,A.mst)
+     ?line(defaultLabelLine(A.mstLabel,A.mst))
      :''
    }
 
    ${line(`Địa chỉ: ${esc(A.addr||'')}`)}
 
-   ${line(
-    `${esc(A.headLabel||'Người đại diện')}: `+
-    esc([A.title,A.head].filter(Boolean).join(' '))
-   )}
+   ${
+    defaultLabelLine(A.headLabel,[A.title,A.head].filter(Boolean).join(' '))
+     ?line(defaultLabelLine(A.headLabel,[A.title,A.head].filter(Boolean).join(' ')))
+     :''
+   }
 
    ${line(
     A.pos
@@ -248,11 +261,13 @@ window.buildDoc=function(c){
      :''
    )}
 
-   ${line(
-    String(A.emailLabel||'').trim()
-     ?`${esc(String(A.emailLabel).trim())}: ${esc(A.email||'')}`
+   ${
+    defaultLabelLine(A.emailLabel,A.email)
+     ?line(defaultLabelLine(A.emailLabel,A.email))
      :''
-   )}
+   }
+
+   ${customLabelLines(A).map(line).join('')}
 
   </div>
 

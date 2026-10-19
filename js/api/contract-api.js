@@ -4,7 +4,8 @@ window.ContractAPI=(function(){
  const FIELDS=[['mstLabel','Nhãn mã số'],['mst','Mã số'],['addr','Địa chỉ'],['headLabel','Nhãn người ký'],['title','Danh xưng'],['head','Họ tên người ký'],['pos','Chức vụ'],['emailLabel','Nhãn email'],['email','Email']];
  const norm=s=>String(s??'').trim().replace(/\s+/g,' ').toLowerCase();
  const val=s=>String(s??'').trim();
- const pick=b=>{const o={};FIELDS.forEach(([k])=>o[k]=val(b[k]));return o};
+ const normCustoms=v=>Array.isArray(v)?v.map(x=>({name:String(x?.name??'').trim(),value:String(x?.value??'').trim()})).filter(x=>x.name||x.value):[];
+ const pick=b=>{const o={};FIELDS.forEach(([k])=>o[k]=val(b[k]));o.customs=normCustoms(b.customs);return o};
  return{
   FIELDS,norm,
   async boot(){
@@ -28,7 +29,10 @@ window.ContractAPI=(function(){
    const b=c.benA,res={created:false,updated:false};let k=this.findCustomer(b.name);
    if(!k){k={id:uid('kh'),name:val(b.name),...pick(b),note:''};DB.customers.push(k);res.created=true}
    else{
-    const d=FIELDS.filter(([f])=>val(k[f])!==val(b[f])).map(([f,label])=>({field:f,label,old:val(k[f]),now:val(b[f])}));
+    const d=[
+      ...FIELDS.filter(([f])=>val(k[f])!==val(b[f])).map(([f,label])=>({field:f,label,old:val(k[f]),now:val(b[f])})),
+      ...(JSON.stringify(normCustoms(k.customs))!==JSON.stringify(normCustoms(b.customs))?[{field:'customs',label:'Nhãn tùy chọn',old:JSON.stringify(normCustoms(k.customs)),now:JSON.stringify(normCustoms(b.customs))}]:[])
+    ];
     if(d.length&&confirmFn(k,d)){Object.assign(k,pick(b));res.updated=true}
    }
    c.customerId=k.id;

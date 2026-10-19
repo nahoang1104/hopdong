@@ -46,11 +46,11 @@ window.TERMS=[
  }
 ];
 window.SEED={
- // Khách hàng mẫu (Bên A trong hợp đồng gốc) — chọn từ danh sách gợi ý để điền nhanh
- customers:[{id:'kh-biwase',name:'CHI NHÁNH VẬN TẢI – CÔNG TY TNHH MỘT THÀNH VIÊN LIÊN HỢP KHOA HỌC - CÔNG NGHỆ - MÔI TRƯỜNG BIWASE',mstLabel:'Mã số chi nhánh',mst:'3703221375-010',addr:'Số 39, Tổ 8, Khu phố Bông Trang, Phường Chánh Phú Hòa, Thành phố Hồ Chí Minh, Việt Nam',headLabel:'Người đứng đầu',title:'Ông',head:'Lê Minh Dũ',pos:''}],
+ // Khách hàng mẫu (nếu cần) — danh sách này hiện rỗng để không hiển thị dữ liệu giả trong dropdown
+ customers:[],
  benB:{name:'CÔNG TY CỔ PHẦN CÔNG NGHỆ DỊCH VỤ QUANH TA',mst:'0318957834',stk:'1062763429 - Ngân hàng Vietcombank',addr:'Biệt thự Liên Phương 2, Lô 28, Đường Số 3, Công viên Phần Mềm, Phường Trung Mỹ Tây, TP. Hồ Chí Minh',title:'Bà',rep:'Trần Thị Phú Ngọc',pos:'Giám đốc'},
  blank:()=>{const n=new Date(),mm=String(n.getMonth()+1).padStart(2,'0'),yy=String(n.getFullYear());return({id:uid('hd'),so:`${mm}/${yy}/HĐPM--QT`,title1:'HỢP ĐỒNG PHÁT TRIỂN',title2:'GIẢI PHÁP PHẦN MỀM',day:'',month:mm,year:yy,
-  benA:{name:'',mstLabel:'Mã số thuế',mst:'',addr:'',headLabel:'Người đại diện',title:'',head:'',pos:'',emailLabel:'',email:''},benB:{...SEED.benB},sw:'',
+  benA:{name:'',mstLabel:'Mã số thuế',mst:'',addr:'',headLabel:'Người đại diện',title:'',head:'',pos:'',emailLabel:'',email:'',customs:[]},benB:{...SEED.benB},sw:'',
   funcs:[{name:'',desc:''}],items:[{name:'',cost:0}],payMode:'amt',
   pays:[{content:'Tạm ứng ngay khi ký hợp đồng',pct:50,amt:0},{content:'Khi hoàn thành các chức năng theo phạm vi triển khai và thực hiện nghiệm thu, bàn giao.',pct:50,amt:0}],
   total:'03 tuần phát triển chính và 01 tuần khách hàng góp ý hoàn chỉnh, nghiệm thu và bàn giao',
